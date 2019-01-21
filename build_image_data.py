@@ -14,7 +14,7 @@ import numpy as np
 from PIL import Image
 from random import shuffle
 
-def load_batch(foldername):
+def load_batch(foldername): # load and arrange data
     '''load data from single folder'''
     images = []
     labels = []
