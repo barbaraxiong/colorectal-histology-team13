@@ -14,15 +14,48 @@ from keras.models import Sequential
 from keras.layers.core import Flatten, Dense, Dropout
 from keras.layers.convolutional import Convolution2D, MaxPooling2D, ZeroPadding2D
 from keras.optimizers import SGD
+from keras.callbacks import EarlyStopping
+from keras.wrappers.scikit_learn import KerasClassifier
+from sklearn.preprocessing import LabelEncoder
+from keras.utils import np_utils
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import KFold
+
+seed = 7
 
 # Prepare data
 data_sets = build_image_data.load_data()
 
-x_train = data_sets["images_train"]
-y_train = data_sets["labels_train"]
-x_test = data_sets["images_test"]
-y_test = data_sets["labels_test"]
 
+x = data_sets["images"]
+y = data_sets["labels"]
+
+
+#img = Image.fromarray(x_train[0], 'RGB')
+#img.show()
+
+# encode class values as integers
+encoder = LabelEncoder()
+encoder.fit(y)
+encoded_Y = encoder.transform(y)
+# convert integers to dummy variables (i.e. one hot encoded)
+dummy_y = np_utils.to_categorical(encoded_Y)
+
+def linear():
+    model = Sequential()
+    model.add(Flatten(input_shape = (150, 150,3)))
+    model.add(Dense(8, activation = 'relu'))
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+    return model
+
+def baseline_model():
+	# create model
+	model = Sequential()
+	model.add(Dense(8, input_dim=4, activation='relu'))
+	model.add(Dense(3, activation='softmax'))
+	# Compile model
+	model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+	return model
 
 def VGG_16(weights_path=None):
     model = Sequential()
@@ -69,9 +102,8 @@ def VGG_16(weights_path=None):
     model.add(Dropout(0.5))
     model.add(Dense(1000, activation='softmax'))
     
-# Test pretrained model
-model = VGG_16('vgg16_weights.h5')
-model.compile(loss='mean_squared_error', optimizer='adam', metrics=['mse', 'mae', 'mape', 'cosine'])
-history = model.fit(x_train, y_train, epochs=500, batch_size=5, verbose=2, callbacks=callbacks_list)
-# evaluate the model
-scores = model.evaluate(x_test, y_test, verbose=0)
+#model = VGG_16('vgg16_weights.h5')
+estimator = KerasClassifier(build_fn=linear, epochs=200, batch_size=5, verbose=2)# evaluate the model
+kfold = KFold(n_splits=10, shuffle=True, random_state=seed)
+results = cross_val_score(estimator, x, dummy_y, cv=kfold)
+print("Baseline: %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
