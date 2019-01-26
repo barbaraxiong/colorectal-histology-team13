@@ -33,8 +33,14 @@ def load_batch(foldername):
 def load_data():
     '''load all folder data and merge training batches'''
     X, Y = load_batch("colorectal-histology-mnist/Kather_texture_2016_image_tiles_5000/")
-    xs = X
-    ys = Y
+    # For only inputting part of the dataset for test runs
+#    shuffle(X)
+#    shuffle(Y)
+#    z = list(zip(X,Y))
+#    shuffle(z)
+#    X, Y = zip(*z)
+    xs = X#[:5000]
+    ys = Y#[:5000]
     xs = np.concatenate([xs])
     ys = np.concatenate([ys])
     classes = ['01_TUMOR', '02_STROMA', '03_COMPLEX', '04_LYMPHO', '05_DEBRIS', '06_MUCOSA', '07_ADIPOSE', '08_EMPTY']

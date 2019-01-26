@@ -41,7 +41,7 @@ encoded_Y = encoder.transform(y)
 # convert integers to dummy variables (i.e. one hot encoded)
 dummy_y = np_utils.to_categorical(encoded_Y)
 
-def linear():
+def basic():
     model = Sequential()
     model.add(Flatten(input_shape = (150, 150,3)))
     model.add(Dense(8, activation = 'relu'))
@@ -51,10 +51,10 @@ def linear():
 
 def VGG_16(weights_path=None):
     model = Sequential()
-    model.add(ZeroPadding2D((1,1),input_shape=(3,150,150)))
+    model.add(ZeroPadding2D((1,1),input_shape=(150,150, 3)))
     model.add(Convolution2D(64, 3, 3, activation='relu'))
     model.add(ZeroPadding2D((1,1)))
-    model.add(Convolution2D(64, 3, 3, activation='relu'))
+    model.add(Convolution2D(32, 3, 3, activation='relu'))
     model.add(MaxPooling2D((2,2), strides=(2,2)))
 
     model.add(ZeroPadding2D((1,1)))
@@ -92,10 +92,14 @@ def VGG_16(weights_path=None):
     model.add(Dropout(0.5))
     model.add(Dense(4096, activation='relu'))
     model.add(Dropout(0.5))
-    model.add(Dense(1000, activation='softmax'))
+    model.add(Dense(8, activation='softmax'))
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+    return model
 
 #model = VGG_16('vgg16_weights.h5')
-estimator = KerasClassifier(build_fn=linear, epochs=200, batch_size=5, verbose=2)# evaluate the model
+estimator = KerasClassifier(build_fn=VGG_16, epochs=50, batch_size=32, verbose=1)
 kfold = KFold(n_splits=10, shuffle=True, random_state=seed)
-results = cross_val_score(estimator, x, dummy_y, cv=kfold)
+earlystop = EarlyStopping(monitor='loss', min_delta=0.0001, patience=5,
+                                 verbose=1, mode='auto')
+results = cross_val_score(estimator, x, dummy_y, cv = kfold, fit_params={"callbacks":[earlystop]})
 print("Baseline: %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
