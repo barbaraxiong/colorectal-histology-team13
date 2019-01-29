@@ -12,6 +12,7 @@ import build_image_data
 from PIL import Image, ImageOps
 from keras.models import Sequential
 from keras.layers.core import Flatten, Dense, Dropout
+from keras.layers import GlobalMaxPooling2D
 from keras.layers.convolutional import Convolution2D, MaxPooling2D, ZeroPadding2D
 from keras.optimizers import SGD
 from keras.callbacks import EarlyStopping
@@ -20,6 +21,7 @@ from sklearn.preprocessing import LabelEncoder
 from keras.utils import np_utils
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import KFold
+import matplotlib.pyplot as plt
 
 seed = 7
 
@@ -30,7 +32,6 @@ data_sets = build_image_data.load_data()
 x = data_sets["images"]
 y = data_sets["labels"]
 
-
 #img = Image.fromarray(x_train[0], 'RGB')
 #img.show()
 
@@ -40,6 +41,10 @@ encoder.fit(y)
 encoded_Y = encoder.transform(y)
 # convert integers to dummy variables (i.e. one hot encoded)
 dummy_y = np_utils.to_categorical(encoded_Y)
+for i in range(0,5000,500):
+    imgplot = plt.imshow(x[i])
+    print(dummy_y[i])
+    plt.show()
 
 def basic():
     model = Sequential()
@@ -48,7 +53,38 @@ def basic():
     model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
     return model
 
+def kaggle():
+    '''from https://www.kaggle.com/hrmello/histology-with-cnn'''
+    model = Sequential()
+    model.add(Convolution2D(filters = 16, kernel_size = 3, padding = 'same', activation = 'relu', input_shape = (150, 150, 3)))
+    model.add(Convolution2D(filters = 16, kernel_size = 3, padding = 'same', activation = 'relu'))
+    model.add(Convolution2D(filters = 16, kernel_size = 3, padding = 'same', activation = 'relu'))
+    model.add(Dropout(0.3))
+    model.add(MaxPooling2D(pool_size = 3)) 
 
+    model.add(Convolution2D(filters = 32, kernel_size = 3, padding = 'same', activation = 'relu')) 
+    model.add(Convolution2D(filters = 32, kernel_size = 3, padding = 'same', activation = 'relu')) 
+    model.add(Convolution2D(filters = 32, kernel_size = 3, padding = 'same', activation = 'relu'))
+    model.add(Dropout(0.3))
+    model.add(MaxPooling2D(pool_size = 3)) 
+
+    model.add(Convolution2D(filters = 64, kernel_size = 3, padding = 'same', activation = 'relu'))
+    model.add(Convolution2D(filters = 64, kernel_size = 3, padding = 'same', activation = 'relu'))
+    model.add(Convolution2D(filters = 64, kernel_size = 3, padding = 'same', activation = 'relu'))
+    model.add(Dropout(0.3))
+    model.add(MaxPooling2D(pool_size = 3))
+
+    model.add(Convolution2D(filters = 128, kernel_size = 3, padding = 'same', activation = 'relu'))
+    model.add(Convolution2D(filters = 128, kernel_size = 3, padding = 'same', activation = 'relu'))
+    model.add(Convolution2D(filters = 256, kernel_size = 3, padding = 'same', activation = 'relu'))
+    model.add(Dropout(0.3))
+    model.add(MaxPooling2D(pool_size = 3))
+    model.add(GlobalMaxPooling2D())
+    model.add(Dense(8, activation = 'softmax'))
+    model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+    return model
+
+    
 def VGG_16(weights_path=None):
     model = Sequential()
     model.add(ZeroPadding2D((1,1),input_shape=(150,150, 3)))
@@ -97,8 +133,8 @@ def VGG_16(weights_path=None):
     return model
 
 #model = VGG_16('vgg16_weights.h5')
-estimator = KerasClassifier(build_fn=VGG_16, epochs=50, batch_size=32, verbose=1)
-kfold = KFold(n_splits=10, shuffle=True, random_state=seed)
+estimator = KerasClassifier(build_fn=kaggle, epochs=50, batch_size=32, verbose=1)
+kfold = KFold(n_splits=5, shuffle=True, random_state=seed)
 earlystop = EarlyStopping(monitor='loss', min_delta=0.0001, patience=5,
                                  verbose=1, mode='auto')
 results = cross_val_score(estimator, x, dummy_y, cv = kfold, fit_params={"callbacks":[earlystop]})
