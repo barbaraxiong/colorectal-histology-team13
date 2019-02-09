@@ -24,6 +24,7 @@ def load_batch(foldername):
                 if img.lower().endswith(('.png', '.jpg', '.jpeg', '.tif')):
                     image = Image.open(os.path.join(foldername, category)+"/"+img)
                     sess = tf.Session()
+                    image = image.resize((150,150))
                     with sess.as_default():
                         images.append(np.asarray(image))
                     labels.append(str(category))
@@ -46,10 +47,12 @@ def load_data():
     classes = ['01_TUMOR', '02_STROMA', '03_COMPLEX', '04_LYMPHO', '05_DEBRIS', '06_MUCOSA', '07_ADIPOSE', '08_EMPTY']
 
     # Normalize Data
-
-    #mean_image = np.mean(x_train, axis=0)
-    #x_train = np.subtract(x_train, mean_image, out=x_train, casting = "unsafe")
-    #x_test = np.subtract(x_test, mean_image, out=x_test, casting = "unsafe")
+    def norm_image(image):
+        return (image - np.mean(image)) / np.std(image)
+    for i in range(len(xs)):
+        xs[i] = norm_image(xs[i])
+    #mean_image = np.mean(xs, axis=0)
+    #xs = np.subtract(xs, mean_image, out=xs, casting = "unsafe")
 
     data_dict = {
         'images': xs,
