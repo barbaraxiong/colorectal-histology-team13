@@ -24,7 +24,7 @@ def load_batch(foldername):
                 if img.lower().endswith(('.png', '.jpg', '.jpeg', '.tif')):
                     image = Image.open(os.path.join(foldername, category)+"/"+img)
                     sess = tf.Session()
-                    image = image.resize((150,150))
+                    image = image.resize((128,128))
                     with sess.as_default():
                         images.append(np.asarray(image))
                     labels.append(str(category))

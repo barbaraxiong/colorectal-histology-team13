@@ -12,7 +12,7 @@ import build_image_data
 from PIL import Image, ImageOps
 from keras.models import Sequential
 from keras.layers.core import Flatten, Dense, Dropout
-from keras.layers import GlobalMaxPooling2D
+from keras.layers import GlobalMaxPooling2D, GlobalAveragePooling2D
 from keras.layers.convolutional import Convolution2D, MaxPooling2D, ZeroPadding2D
 from keras.optimizers import SGD
 from keras.callbacks import EarlyStopping
@@ -22,6 +22,9 @@ from keras.utils import np_utils
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import KFold
 import matplotlib.pyplot as plt
+from keras.applications import MobileNet
+from keras.applications.mobilenet import preprocess_input
+from keras import Model
 
 seed = 7
 
@@ -133,8 +136,21 @@ def VGG_16(weights_path=None):
     model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
     return model
 
+def mobilenet():
+    base_model=MobileNet(weights = 'imagenet', include_top=False) #imports the mobilenet model and discards the last 1000 neuron layer.
+
+    x=base_model.output
+    x=GlobalAveragePooling2D()(x)
+    x=Dense(1024,activation='relu')(x) #we add dense layers so that the model can learn more complex functions and classify for better results.
+    x=Dense(1024,activation='relu')(x) #dense layer 2
+    x=Dense(512,activation='relu')(x) #dense layer 3
+    preds=Dense(8,activation='softmax')(x) #final layer with softmax activation
+    model=Model(inputs=base_model.input,outputs=preds)
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+    return model
+
 #model = VGG_16('vgg16_weights.h5')
-estimator = KerasClassifier(build_fn=basic, epochs=50, batch_size=1, verbose=1)
+estimator = KerasClassifier(build_fn=mobilenet, epochs=50, batch_size=1, verbose=1)
 kfold = KFold(n_splits=5, shuffle=True, random_state=seed)
 earlystop = EarlyStopping(monitor='loss', min_delta=0.0001, patience=5,
                                  verbose=1, mode='auto')
