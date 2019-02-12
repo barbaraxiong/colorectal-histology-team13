@@ -14,7 +14,7 @@ from keras.models import Sequential
 from keras.layers.core import Flatten, Dense, Dropout
 from keras.layers import GlobalMaxPooling2D, GlobalAveragePooling2D
 from keras.layers.convolutional import Convolution2D, MaxPooling2D, ZeroPadding2D
-from keras.optimizers import SGD
+from keras.optimizers import SGD, Adam
 from keras.callbacks import EarlyStopping
 from keras.wrappers.scikit_learn import KerasClassifier
 from sklearn.preprocessing import LabelEncoder
@@ -147,11 +147,12 @@ def mobilenet():
     x=Dense(512,activation='relu')(x) #dense layer 3
     preds=Dense(8,activation='softmax')(x) #final layer with softmax activation
     model=Model(inputs=base_model.input,outputs=preds)
-    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+    adam = Adam(lr=0.0001)
+    model.compile(loss='categorical_crossentropy', optimizer=adam, metrics=['accuracy'])
     return model
 
 #model = VGG_16('vgg16_weights.h5')
-estimator = KerasClassifier(build_fn=mobilenet, epochs=50, batch_size=8, verbose=1, lr = 0.0001)
+estimator = KerasClassifier(build_fn=mobilenet, epochs=50, batch_size=8, verbose=1)
 kfold = KFold(n_splits=5, shuffle=True, random_state=seed)
 earlystop = EarlyStopping(monitor='loss', min_delta=0.0001, patience=5,
                                  verbose=1, mode='auto')
