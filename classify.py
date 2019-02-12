@@ -45,13 +45,14 @@ encoded_Y = encoder.transform(y)
 # convert integers to dummy variables (i.e. one hot encoded)
 dummy_y = np_utils.to_categorical(encoded_Y)
 for i in range(0,5000,500):
+   print(x[i].shape)
    imgplot = plt.imshow(x[i])
    print(dummy_y[i])
    plt.show()
 
 def basic():
     model = Sequential()
-    model.add(Flatten(input_shape = (150, 150,3)))
+    model.add(Flatten(input_shape = (160, 160,3)))
     model.add(Dense(128, activation = 'relu'))
     model.add(Dense(8, activation = 'relu'))
     model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
@@ -91,7 +92,7 @@ def kaggle():
     
 def VGG_16(weights_path=None):
     model = Sequential()
-    model.add(ZeroPadding2D((1,1),input_shape=(150,150, 3)))
+    model.add(ZeroPadding2D((1,1),input_shape=(160,160, 3)))
     model.add(Convolution2D(64, (3, 3), activation='relu'))
     model.add(ZeroPadding2D((1,1)))
     model.add(Convolution2D(32, (3, 3), activation='relu'))
@@ -137,7 +138,7 @@ def VGG_16(weights_path=None):
     return model
 
 def mobilenet():
-    base_model=MobileNet(weights = 'imagenet', include_top=False) #imports the mobilenet model and discards the last 1000 neuron layer.
+    base_model=MobileNet(input_shape = (160, 160,3), weights = 'imagenet', include_top=False) #imports the mobilenet model and discards the last 1000 neuron layer.
 
     x=base_model.output
     x=GlobalAveragePooling2D()(x)
@@ -150,7 +151,7 @@ def mobilenet():
     return model
 
 #model = VGG_16('vgg16_weights.h5')
-estimator = KerasClassifier(build_fn=mobilenet, epochs=50, batch_size=1, verbose=1)
+estimator = KerasClassifier(build_fn=mobilenet, epochs=50, batch_size=8, verbose=1, lr = 0.0001)
 kfold = KFold(n_splits=5, shuffle=True, random_state=seed)
 earlystop = EarlyStopping(monitor='loss', min_delta=0.0001, patience=5,
                                  verbose=1, mode='auto')
